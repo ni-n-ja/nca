@@ -7,6 +7,9 @@ var replace = require('gulp-replace');
 var qr = require("qrcode-terminal");
 var del = require('del');
 
+var nodemon = require('gulp-nodemon');
+var BROWSER_SYNC_RELOAD_DELAY = 500;
+
 var generateUuid = () => {
     // https://github.com/GoogleChrome/chrome-platform-analytics/blob/master/src/internal/identifier.js
     let chars = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".split("");
@@ -41,23 +44,44 @@ gulp.task('reviveSVG', () => {
         .pipe(gulp.dest('./svg_minified'));
 });
 
-gulp.task('browser-sync', () => {
+gulp.task('browser-sync', ['nodemon'], () => {
     const instance = browserSync({
         files: ['js/**/*.js', '**/*.html', 'css/**/*.css', '!js/service-worker.js'],
-        server: {
-            baseDir: "./"
-        },
+        // server: {
+        //     baseDir: "./"
+        // },
         port: 9001,
         https: true,
         open: false,
         proxy: {
-            target: "http://localhost:9002",
+            target: "http://localhost:3000",
             ws: true
         }
     }, () => {
         let url = instance.getOption('urls').get('external');
         qr.generate(url);
     });
+});
+
+gulp.task('nodemon', function (cb) {
+    var called = false;
+    return nodemon({
+            script: 'server.js',
+            watch: ['server.js']
+        })
+        .on('start', function onStart() {
+            if (!called) {
+                cb();
+            }
+            called = true;
+        })
+        .on('restart', function onRestart() {
+            setTimeout(function reload() {
+                browserSync.reload({
+                    stream: false
+                });
+            }, BROWSER_SYNC_RELOAD_DELAY);
+        });
 });
 
 gulp.task('default', ['replace', 'reviveSVG', 'browser-sync'], function () {

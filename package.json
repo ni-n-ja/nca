@@ -8,6 +8,9 @@
         "qrcode-terminal": "*",
         "del": "*",
         "naudiodon": "^0.4.7",
+        "gulp-nodemon": "*",
+        "express": "*",
+        "body-parser": "",
         "socket.io": "*"
     },
     "dependencies": {
