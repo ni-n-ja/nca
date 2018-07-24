@@ -7,6 +7,9 @@
         "gulp-replace": "*",
         "qrcode-terminal": "*",
         "del": "*",
-        "node-core-audio": "*"
+        "naudiodon": "^0.4.7"
+    },
+    "dependencies": {
+        "naudiodon": "^0.4.7"
     }
 }
