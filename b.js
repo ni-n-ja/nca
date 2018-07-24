@@ -2,8 +2,6 @@ var portAudio = require('naudiodon');
 
 console.log(portAudio.getDevices());
 
-var fs = require('fs');
-
 var ai = new portAudio.AudioInput({
     channelCount: 2,
     sampleFormat: portAudio.SampleFormat16Bit,
@@ -11,6 +9,6 @@ var ai = new portAudio.AudioInput({
     deviceId: 20
 });
 
-ai.on('data', data => console.log(data));
-ai.on('error', err => console.error);
-ai.start();
+// ai.on('data', data => console.log(data));
+// ai.on('error', err => console.error);
+// ai.start();

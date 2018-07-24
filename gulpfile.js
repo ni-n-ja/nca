@@ -49,7 +49,11 @@ gulp.task('browser-sync', () => {
         },
         port: 9001,
         https: true,
-        open: false
+        open: false,
+        proxy: {
+            target: "http://localhost:9002",
+            ws: true
+        }
     }, () => {
         let url = instance.getOption('urls').get('external');
         qr.generate(url);
