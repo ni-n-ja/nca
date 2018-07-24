@@ -1,0 +1,12 @@
+{
+    "devDependencies": {
+        "browser-sync": "*",
+        "gulp": "*",
+        "gulp-inject-svg": "*",
+        "gulp-svgmin": "*",
+        "gulp-replace": "*",
+        "qrcode-terminal": "*",
+        "del": "*",
+        "node-core-audio": "*"
+    }
+}
