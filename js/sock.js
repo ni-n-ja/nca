@@ -9,12 +9,9 @@
 
     socket.on('connect', function (data) {
         console.log("Websocket connected");
-        socket.emit('hello', {
-            id: "sddsda"
-        });
+        socket.emit('hello', data);
     });
-
-    socket.on('ping', function (data) {
+    socket.on('data', function (data) {
         console.log("Server says:", data);
     });
 })();
