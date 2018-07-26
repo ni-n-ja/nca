@@ -5,12 +5,18 @@ var io = function (server) {
     // });
     var socketio = require("socket.io")(server);
     var portAudio = require('naudiodon');
-    console.log(portAudio.getDevices());
+    portAudio.getDevices().forEach((e, i, arr) => {
+        if (e.maxInputChannels == 2 || e.maxOutputChannels == 2) {
+            console.log(e);
+        }
+    });
+
     var ai = new portAudio.AudioInput({
         channelCount: 2,
         sampleFormat: portAudio.SampleFormat16Bit,
         sampleRate: 44100,
-        deviceId: 20
+        //deviceId: 20
+        deviceId: 14
     });
 
     socketio.on('connection', function (socket) {
@@ -24,11 +30,13 @@ var io = function (server) {
 
         socket.on('disconnect', function () {
             console.log("Websocket 'disconnect' event");
+            ai.stop();
         });
 
         socket.on('hello', function (data) {
             console.log("Client says:", data);
             ai.on('data', data => {
+                console.log(data);
                 socket.emit('data', data);
                 // console.log(data);
             });
