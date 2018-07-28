@@ -10,14 +10,8 @@ var io = function (server) {
             console.log(e);
         }
     });
-
-    var ai = new portAudio.AudioInput({
-        channelCount: 2,
-        sampleFormat: portAudio.SampleFormat16Bit,
-        sampleRate: 44100,
-        //deviceId: 20
-        deviceId: 14
-    });
+    console.log(Object.keys(portAudio));
+    var ai = null;
 
     socketio.on('connection', function (socket) {
         socket.on('error', function (err) {
@@ -26,18 +20,29 @@ var io = function (server) {
 
         socket.on('connect', function (data) {
             console.log("Websocket 'connected' event with params:", data);
+
         });
 
         socket.on('disconnect', function () {
             console.log("Websocket 'disconnect' event");
-            ai.stop();
+            if (ai != null) {
+                ai.quit();
+            }
+
         });
 
         socket.on('hello', function (data) {
+            ai = new portAudio.AudioInput({
+                channelCount: 2,
+                sampleFormat: portAudio.SampleFormat8Bit,
+                sampleRate: 44100,
+                deviceId: 20
+                //deviceId: 14
+            });
             console.log("Client says:", data);
             ai.on('data', data => {
-                console.log(data);
                 socket.emit('data', data);
+                console.log(data);
                 // console.log(data);
             });
             ai.on('error', err => console.error);
