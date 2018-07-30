@@ -18,10 +18,10 @@ process.on('message', function (msg) {
     console.log(buffer[0]);
     let data = msg.data;
     for (var i = 0; i < length * 2; i += 2) {
-        buffer[i] = data.r[i];
-        buffer[i + 1] = data.l[i];
-        // buffer[i] = (Math.sin((i / length) * 3.1415 * 2.0) * 127);
-        // buffer[i + 1] = (Math.sin((i / length) * 3.1415) * 127);
+        // buffer[i] = data.r[i];
+        // buffer[i + 1] = data.l[i];
+        buffer[i] = (Math.sin((i / length) * 3.1415 * 2.0) * 127);
+        buffer[i + 1] = (Math.sin((i / length) * 3.1415) * 127);
     }
 });
 
@@ -31,17 +31,24 @@ if (ao != null) {
 ao.on('error', err => console.error);
 ao.start();
 
-write();
+function loop(writer, data) {
+    write();
 
-function write() {
-    var ok = true;
-    do {
-        // writer.end(buffer, console.log("Done!"));
-        ok = ao.write(buffer);
-    } while (ok);
-    if (!ok) {
-        ao.once('drain', write);
+    function write() {
+        var ok = true;
+        do {
+            ok = writer.write(data);
+            //console.log("w", data);
+        } while (ok);
+        if (!ok) {
+            writer.once('drain', write);
+            //console.log("d", data);
+        }
     }
 }
+
+ao.on('error', console.error);
+
+loop(ao, buffer);
 
 process.once('SIGINT', ao.quit);
