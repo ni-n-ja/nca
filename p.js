@@ -1,54 +1,60 @@
 'use strict'
 
+'use strict'
+
+var express = require('express');
+var app = express();
+var server = require('http').Server(app);
+var socketio = require("socket.io")(server);
+var bodyParser = require('body-parser');
+var router = express.Router();
+var config = require('./config');
+
 var child_process = require('child_process');
-var portAudio = require('naudiodon');
-
 var child = child_process.fork('c.js');
-var ao = new portAudio.AudioOutput({
-    channelCount: 2,
-    sampleFormat: portAudio.SampleFormat8Bit,
-    sampleRate: 44100,
-    deviceId: -1
+
+app.use(express.static(__dirname));
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
+app.use(bodyParser.json());
+
+router.use(function (req, res, next) {
+    next();
 });
 
-var length = 400;
-var buffer = Buffer.allocUnsafe(length * 2);
-
-process.on('message', function (msg) {
-    console.log(buffer[0]);
-    let data = msg.data;
-    for (var i = 0; i < length * 2; i += 2) {
-        // buffer[i] = data.r[i];
-        // buffer[i + 1] = data.l[i];
-        buffer[i] = (Math.sin((i / length) * 3.1415 * 2.0) * 127);
-        buffer[i + 1] = (Math.sin((i / length) * 3.1415) * 127);
-    }
+router.route('/api').get(function (req, res) {
+    res.writeHead(200, {
+        'content-type': 'application/json'
+    });
+    res.end(JSON.stringify({
+        "message": "hello!!!sss"
+    }));
 });
 
-if (ao != null) {
-    ao.quit();
-}
-ao.on('error', err => console.error);
-ao.start();
+app.use('/', router);
+app.get('/api/config', function (req, res) {
+    res.send('var config = ' + JSON.stringify(config));
+});
 
-function loop(writer, data) {
-    write();
+socketio.on('connection', function (socket) {
+    socket.on('error', function (err) {
+        console.log("Websocket 'error' event:", err);
+    });
 
-    function write() {
-        var ok = true;
-        do {
-            ok = writer.write(data);
-            //console.log("w", data);
-        } while (ok);
-        if (!ok) {
-            writer.once('drain', write);
-            //console.log("d", data);
-        }
-    }
-}
+    socket.on('connect', function (data) {
+        console.log("Websocket 'connected' event with params:", data);
+    });
 
-ao.on('error', console.error);
+    socket.on('disconnect', function () {
+        console.log("Websocket 'disconnect' event");
+    });
 
-loop(ao, buffer);
+    socket.on('hello', function (data) {});
 
-process.once('SIGINT', ao.quit);
+    socket.on('data', function (data) {
+        child.send(data);
+    });
+});
+
+server.listen(3000);

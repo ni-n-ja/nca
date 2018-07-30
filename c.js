@@ -1,58 +1,54 @@
 'use strict'
 
-'use strict'
+var portAudio = require('naudiodon');
 
-var express = require('express');
-var app = express();
-var server = require('http').Server(app);
-var socketio = require("socket.io")(server);
-var bodyParser = require('body-parser');
-var router = express.Router();
-var config = require('./config');
-
-app.use(express.static(__dirname));
-app.use(bodyParser.urlencoded({
-    extended: true
-}));
-app.use(bodyParser.json());
-
-router.use(function (req, res, next) {
-    next();
+var ao = new portAudio.AudioOutput({
+    channelCount: 2,
+    sampleFormat: portAudio.SampleFormat8Bit,
+    sampleRate: 44100,
+    deviceId: -1
 });
 
-router.route('/api').get(function (req, res) {
-    res.writeHead(200, {
-        'content-type': 'application/json'
-    });
-    res.end(JSON.stringify({
-        "message": "hello!!!sss"
-    }));
+var length = 1024;
+var buffer = Buffer.allocUnsafe(length * 2);
+
+for (var i = 0; i < length * 2; i += 2) {
+    buffer[i] = (Math.sin((i / length) * 3.1415 * 2.0) * 12);
+    buffer[i + 1] = (Math.sin((i / length) * 3.1415) * 12);
+}
+
+process.on('message', function (data) {
+
+    for (var i = 0; i < length * 2; i += 2) {
+        buffer[i] = data.r[i];
+        buffer[i + 1] = data.l[i];
+        // buffer[i] = (Math.sin((i / length) * 3.1415 * 2.0) * 12);
+        // buffer[i + 1] = (Math.sin((i / length) * 3.1415) * 12);
+    }
+
 });
 
-app.use('/', router);
-app.get('/api/config', function (req, res) {
-    res.send('var config = ' + JSON.stringify(config));
+if (ao == null) {
+    ao.quit();
+}
+ao.on('error', err => console.error);
+
+process.on('play', () => {
+    write();
+    setTimeout(() => {
+        process.emit('play');
+    }, 20);
 });
 
-socketio.on('connection', function (socket) {
-    socket.on('error', function (err) {
-        console.log("Websocket 'error' event:", err);
-    });
+function write() {
+    var ok = true;
+    ok = ao.write(buffer);
+    if (!ok) {
+        ao.once('drain', write);
+    }
+}
+process.emit('play');
 
-    socket.on('connect', function (data) {
-        console.log("Websocket 'connected' event with params:", data);
-    });
+ao.start();
 
-    socket.on('disconnect', function () {
-        console.log("Websocket 'disconnect' event");
-    });
-
-    socket.on('hello', function (data) {});
-
-    socket.on('data', function (data) {
-        console.log(data.r[0]);
-        process.send(data);
-    });
-});
-
-server.listen(3000);
+process.once('SIGINT', ao.quit);
