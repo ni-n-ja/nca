@@ -1,6 +1,6 @@
 var audioCtx = new AudioContext();
 var buffer = null;
-var source = context.createBufferSource();
+var source = audioCtx.createBufferSource();
 var scriptNode = audioCtx.createScriptProcessor(4096, 2, 2);
 var gainNode = audioCtx.createGain();
 
@@ -15,7 +15,7 @@ request.send();
 
 request.onload = function () {
     var res = request.response;
-    context.decodeAudioData(res, function (buf) {
+    audioCtx.decodeAudioData(res, function (buf) {
         source.buffer = buf;
     });
 
@@ -30,7 +30,7 @@ request.onload = function () {
 
     socket.on('connect', function (data) {
         console.log("Websocket connected");
-        socket.emit('hello', data);
+
         scriptNode.onaudioprocess = (event) => {
             var inputBuffer = event.inputBuffer;
             var outputBuffer = event.outputBuffer;
@@ -40,11 +40,15 @@ request.onload = function () {
                     outputData[sample] = right[sample % inputBuffer.length];
                 }
             }
+            socket.emit('hello', data);
         }
         gainNode.gain.value = 0.0005;
+        source.connect(scriptNode);
         scriptNode.connect(gainNode);
         gainNode.connect(audioCtx.destination);
+        source.start(0);
     });
+
     socket.on('data', function (data) {
         buffer = new Uint8Array(data);
         right = new Uint8Array(buffer.length / 2);
@@ -56,6 +60,3 @@ request.onload = function () {
     });
 
 };
-
-source.connect(context.destination);
-source.start(0);

@@ -5,13 +5,15 @@ var io = function (server) {
     // });
     var socketio = require("socket.io")(server);
     var portAudio = require('naudiodon');
-    portAudio.getDevices().forEach((e, i, arr) => {
-        if (e.maxInputChannels == 2 || e.maxOutputChannels == 2) {
-            console.log(e);
-        }
+    var ao = new portAudio.AudioOutput({
+        channelCount: 2,
+        sampleFormat: portAudio.SampleFormat8Bit,
+        sampleRate: 44100,
+        deviceId: -1
     });
-    console.log(Object.keys(portAudio));
-    var ai = null;
+
+    var length = 400;
+    var buffer = Buffer.allocUnsafe(length * 2);
 
     socketio.on('connection', function (socket) {
         socket.on('error', function (err) {
@@ -20,37 +22,41 @@ var io = function (server) {
 
         socket.on('connect', function (data) {
             console.log("Websocket 'connected' event with params:", data);
-
+            ao.start();
         });
 
         socket.on('disconnect', function () {
             console.log("Websocket 'disconnect' event");
-            if (ai != null) {
-                ai.quit();
+            if (ao != null) {
+                ao.quit();
             }
 
         });
 
         socket.on('hello', function (data) {
-            ai = new portAudio.AudioInput({
-                channelCount: 2,
-                sampleFormat: portAudio.SampleFormat8Bit,
-                sampleRate: 44100,
-                deviceId: 20
-                //deviceId: 14
-            });
-            console.log("Client says:", data);
-            ai.on('data', data => {
-                socket.emit('data', data);
-                console.log(data);
-                // console.log(data);
-            });
-            ai.on('error', err => console.error);
-            ai.start();
+            ao.on('error', err => console.error);
+        });
+
+        socket.on('data', function (data) {
+            write();
+
+            function write() {
+                var ok = true;
+                for (var i = 0; i < length * 2; i += 2) {
+                    // buffer[i] = data.r[i];
+                    // buffer[i + 1] = data.l[i];
+                    buffer[i] = (Math.sin((i / length) * 3.1415 * 2.0) * 127);
+                    buffer[i + 1] = (Math.sin((i / length) * 3.1415) * 127);
+                }
+                ok = ao.write(buffer);
+                console.log(ok);
+                console.log(buffer);
+            }
+
         });
     });
 
-
+    process.once('SIGINT', ao.quit);
 }
 
 module.exports = io;

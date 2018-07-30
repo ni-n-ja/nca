@@ -2,7 +2,10 @@ const portAudio = require('naudiodon');
 
 var sampleRate = 44100;
 var tableSize = 200;
-var buffer = Buffer.allocUnsafe(tableSize * 4 * 2);
+var buffer = Buffer.allocUnsafe(tableSize * 4);
+for (var i = 0; i < tableSize * 4; i++) {
+  buffer[i] = (Math.sin((i / tableSize) * 3.1415 * 2.0) * 127);
+}
 
 var ao = new portAudio.AudioOutput({
   channelCount: 2,
@@ -16,10 +19,6 @@ function tenSecondsIsh(writer, data) {
   write();
 
   function write() {
-    for (var i = 0; i < tableSize * 4 * 2; i += 2) {
-      buffer[i] = (Math.sin((i / tableSize) * 3.1415 * 2.0) * 127);
-      buffer[i + 1] = (Math.sin((i / tableSize) * 3.1415) * 127);
-    }
     var ok = true;
     do {
       i -= 1;
@@ -28,11 +27,9 @@ function tenSecondsIsh(writer, data) {
       } else {
         ok = writer.write(data);
       }
-      console.log("w", data);
     } while (i > 0 && ok);
     if (i > 0) {
       writer.once('drain', write);
-      console.log("d", data);
     }
   }
 }
