@@ -11,26 +11,25 @@ var ao = new portAudio.AudioOutput({
   deviceId: -1
 });
 
-function tenSecondsIsh(writer, data) {
-  var i = 552;
+function loop(writer, data) {
   write();
 
   function write() {
     for (var i = 0; i < tableSize * 4 * 2; i += 2) {
-      buffer[i] = (Math.sin((i / tableSize) * 3.1415 * 2.0) * 127);
-      buffer[i + 1] = (Math.sin((i / tableSize) * 3.1415) * 127);
+      buffer[i] = (Math.sin((i / tableSize) * 3.1415 * 2.0) * 12);
+      buffer[i + 1] = (Math.sin((i / tableSize) * 3.1415) * 12);
     }
     var ok = true;
     do {
-      i -= 1;
-      if (i === 0) {
-        writer.end(data, console.log("Done!"));
-      } else {
-        ok = writer.write(data);
-      }
+      // if (i === 0) {
+      //   writer.end(data, console.log("Done!"));
+      // } else {
+      //   ok = writer.write(data);
+      // }
+      ok = writer.write(data);
       console.log("w", data);
-    } while (i > 0 && ok);
-    if (i > 0) {
+    } while (ok);
+    if (!ok) {
       writer.once('drain', write);
       console.log("d", data);
     }
@@ -39,7 +38,7 @@ function tenSecondsIsh(writer, data) {
 
 ao.on('error', console.error);
 
-tenSecondsIsh(ao, buffer);
+loop(ao, buffer);
 ao.start();
 
 process.once('SIGINT', ao.quit);
